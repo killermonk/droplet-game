@@ -1,21 +1,24 @@
+import random
+import tkinter as tk
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
-import tkinter as tk
-import random
 from typing import Any, Callable, TypedDict
 
 EventHandler = Callable[[Any], Any]
+
 
 class KeyboardEventHandler(TypedDict):
     move_left: EventHandler
     move_right: EventHandler
     move_none: EventHandler
 
+
 class MoveDirection(Enum):
     LEFT = -1
     NONE = 0
     RIGHT = 1
+
 
 @dataclass
 class Coords:
@@ -29,6 +32,7 @@ class Coords:
     @classmethod
     def from_coords(cls, coords):
         return cls(*coords[:2])
+
 
 class SpriteBase(ABC):
     def __init__(self, canvas: tk.Canvas, coords: Coords, ref: int) -> None:
@@ -45,9 +49,20 @@ class SpriteBase(ABC):
     def _do_step(self) -> None:
         pass
 
+
 class DropletSprite(SpriteBase):
-    def __init__(self, canvas: tk.Canvas, coords: Coords, size: float, color: str, speed: float, points: int) -> None:
-        self.droplet = canvas.create_oval(coords.x, coords.y, coords.x + size, coords.y + size, fill=color)
+    def __init__(
+        self,
+        canvas: tk.Canvas,
+        coords: Coords,
+        size: float,
+        color: str,
+        speed: float,
+        points: int,
+    ) -> None:
+        self.droplet = canvas.create_oval(
+            coords.x, coords.y, coords.x + size, coords.y + size, fill=color
+        )
         self.size = size
         self.speed = speed
         self.points = points
@@ -59,9 +74,20 @@ class DropletSprite(SpriteBase):
     def delete(self):
         self.canvas.delete(self.droplet)
 
+
 class CupSprite(SpriteBase):
-    def __init__(self, canvas: tk.Canvas, coords: Coords, width: float, height: float, color: str, speed: float) -> None:
-        self.cup = canvas.create_rectangle(coords.x, coords.y, coords.x + width, coords.y - height, fill=color)
+    def __init__(
+        self,
+        canvas: tk.Canvas,
+        coords: Coords,
+        width: float,
+        height: float,
+        color: str,
+        speed: float,
+    ) -> None:
+        self.cup = canvas.create_rectangle(
+            coords.x, coords.y, coords.x + width, coords.y - height, fill=color
+        )
         self.width = width
         self.height = height
         self.speed = speed
@@ -71,7 +97,10 @@ class CupSprite(SpriteBase):
     def _do_step(self) -> None:
         if self.direction == MoveDirection.LEFT and self.coords.x > 0:
             self.canvas.move(self.cup, -self.speed, 0)
-        elif self.direction == MoveDirection.RIGHT and self.coords.x + self.width < self.canvas.winfo_width():
+        elif (
+            self.direction == MoveDirection.RIGHT
+            and self.coords.x + self.width < self.canvas.winfo_width()
+        ):
             self.canvas.move(self.cup, self.speed, 0)
 
     def set_move_direction(self, direction: MoveDirection):
@@ -80,13 +109,14 @@ class CupSprite(SpriteBase):
     def delete(self):
         self.canvas.delete(self.cup)
 
+
 class KeyboardControl:
     def __init__(self, view: tk.Tk) -> None:
         self.view = view
         self.events: dict[str, bool] = {}
 
-        self.view.bind('<KeyPress>', self.handle_key_press)
-        self.view.bind('<KeyRelease>', self.handle_key_release)
+        self.view.bind("<KeyPress>", self.handle_key_press)
+        self.view.bind("<KeyRelease>", self.handle_key_release)
 
     def get(self, key: str) -> bool:
         return self.events.get(key, False)
@@ -102,6 +132,7 @@ class KeyboardControl:
     def handle_key_release(self, event: tk.Event):
         self.events[event.keysym] = False
 
+
 class WaterDropGameModel:
     def __init__(self, width, height):
         self.width = width
@@ -111,8 +142,10 @@ class WaterDropGameModel:
         self.cup_width = 100
         self.cup_speed = 10
         self.game_over = False
-        self.droplet_speed = 5  # Initial droplet falling speed
-        self.droplet_acceleration = 1.01  # Acceleration factor for increasing droplet speed
+        # Initial droplet falling speed
+        self.droplet_speed = 5
+        # Acceleration factor for increasing droplet speed
+        self.droplet_acceleration = 1.01
 
     def update_score(self, points):
         self.score += points
@@ -127,6 +160,7 @@ class WaterDropGameModel:
     def increase_difficulty(self):
         self.droplet_speed *= self.droplet_acceleration  # Increase droplet speed
 
+
 class WaterDropGameView(tk.Tk):
     def __init__(self, model: WaterDropGameModel, on_restart: Callable):
         super().__init__()
@@ -134,13 +168,21 @@ class WaterDropGameView(tk.Tk):
         self.title("Water Drop Game")
         self.geometry(f"{self.model.width}x{self.model.height}")
         self.resizable(False, False)
-        self.canvas = tk.Canvas(self, width=self.model.width, height=self.model.height, bg="white")
+        self.canvas = tk.Canvas(
+            self, width=self.model.width, height=self.model.height, bg="white"
+        )
         self.canvas.pack()
-        self.score_label = tk.Label(self, text=f"Score: {self.model.score}", font=("Arial", 16))
+        self.score_label = tk.Label(
+            self, text=f"Score: {self.model.score}", font=("Arial", 16)
+        )
         self.score_label.place(relx=0.5, rely=0.05, anchor=tk.CENTER)
-        self.high_score_label = tk.Label(self, text=f"High Score: {self.model.high_score}", font=("Arial", 16))
+        self.high_score_label = tk.Label(
+            self, text=f"High Score: {self.model.high_score}", font=("Arial", 16)
+        )
         self.high_score_label.place(relx=0.5, rely=0.1, anchor=tk.CENTER)
-        self.game_over_label = tk.Label(self, text="Game Over", font=("Arial", 36), fg="red")
+        self.game_over_label = tk.Label(
+            self, text="Game Over", font=("Arial", 36), fg="red"
+        )
         self.retry_button = tk.Button(self, text="Retry", command=self.restart_game)
         self.quit_button = tk.Button(self, text="Quit", command=self.quit_game)
         self.on_restart = on_restart
@@ -156,7 +198,7 @@ class WaterDropGameView(tk.Tk):
             self.model.cup_width,
             20,
             "blue",
-            self.model.cup_speed
+            self.model.cup_speed,
         )
 
     def restart_game(self):
@@ -175,17 +217,22 @@ class WaterDropGameView(tk.Tk):
     def update_score(self):
         self.score_label.config(text=f"Score: {self.model.score}")
 
-    def create_droplet(self, x: float, y: float, size: float, color: str, speed: float, points: int):
+    def create_droplet(
+        self, x: float, y: float, size: float, color: str, speed: float, points: int
+    ):
         droplet = DropletSprite(self.canvas, Coords(x, y), size, color, speed, points)
         self.droplets.append(droplet)
 
-    def create_danger_droplet(self, x: float, y: float, size: float, color: str, speed: float):
+    def create_danger_droplet(
+        self, x: float, y: float, size: float, color: str, speed: float
+    ):
         danger_drop = DropletSprite(self.canvas, Coords(x, y), size, color, speed, -100)
         self.danger_drops.append(danger_drop)
 
     def quit_game(self):
         self.quit_button.destroy()
         self.quit()
+
 
 class WaterDropGameController:
     def __init__(self, width: int, height: int):
@@ -211,24 +258,29 @@ class WaterDropGameController:
                 droplet_size = 20
                 droplet_color = "gold"
                 points = 50
-                droplet_speed = self.model.droplet_speed * 1.5  # Rare drops move 1.5 times faster
+                # Rare drops move 1.5 times faster
+                droplet_speed = self.model.droplet_speed * 1.5
             else:
                 droplet_size = 10
                 droplet_color = "blue"
                 points = 10
                 droplet_speed = self.model.droplet_speed
 
-            self.view.create_droplet(x, y, droplet_size, droplet_color, droplet_speed, points)
+            self.view.create_droplet(
+                x, y, droplet_size, droplet_color, droplet_speed, points
+            )
             self.view.after(self.spawn_timeout, self.spawn_droplet)
 
     def spawn_danger_drop(self):
         if not self.model.game_over:
             x = random.randint(50, 750)
             y = 0
-            self.view.create_danger_droplet(x, y, 30, "red", self.model.droplet_speed * 2)
+            self.view.create_danger_droplet(
+                x, y, 30, "red", self.model.droplet_speed * 2
+            )
 
     def did_droplet_hit_cup(self, droplet: DropletSprite) -> bool:
-        droplet_bottom = droplet.coords.y + droplet.size/2
+        droplet_bottom = droplet.coords.y + droplet.size / 2
         droplet_left = droplet.coords.x
         droplet_right = droplet.coords.x + droplet.size
 
@@ -236,7 +288,11 @@ class WaterDropGameController:
         cup_left = self.view.cup.coords.x
         cup_right = self.view.cup.coords.x + self.view.cup.width
 
-        return droplet_bottom > cup_top and droplet_left < cup_right and droplet_right > cup_left
+        return (
+            droplet_bottom > cup_top
+            and droplet_left < cup_right
+            and droplet_right > cup_left
+        )
 
     def move_droplets(self):
         if not self.model.game_over:
@@ -283,7 +339,7 @@ class WaterDropGameController:
         if not self.model.game_over:
             left_down = self.keyboard_control.get("Left")
             right_down = self.keyboard_control.get("Right")
-            if left_down ^ right_down: # one or the other, but not both
+            if left_down ^ right_down:  # one or the other, but not both
                 if left_down:
                     self.view.cup.set_move_direction(MoveDirection.LEFT)
                 else:
@@ -297,10 +353,10 @@ class WaterDropGameController:
         self.view.mainloop()
 
     def end_game(self):
-      self.model.game_over = True
-      self.view.game_over_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
-      self.view.retry_button.place(relx=0.5, rely=0.6, anchor=tk.CENTER)
-      self.view.quit_button.place(relx=0.5, rely=0.7, anchor=tk.CENTER)
+        self.model.game_over = True
+        self.view.game_over_label.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        self.view.retry_button.place(relx=0.5, rely=0.6, anchor=tk.CENTER)
+        self.view.quit_button.place(relx=0.5, rely=0.7, anchor=tk.CENTER)
 
 
 if __name__ == "__main__":
